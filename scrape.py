@@ -5,6 +5,7 @@ import requests
 import pandas as pd
 import pdb
 import time
+from dataclasses import dataclass
 from functools import partial
 from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
@@ -18,6 +19,15 @@ SEARCH = "https://efdsearch.senate.gov/search/report/data/"
 RESULTS_PER_PAGE = 100
 STARTDATE = "06/01/2020 00:00:00"
 SLEEPLENGTH = 2
+
+
+@dataclass
+class ScrapedDisclosure:
+    url: str
+    senator: str
+    disclosure_type: str
+    date: str
+    html: str
 
 
 class TransactionScraper(ABC):
@@ -86,49 +96,21 @@ class SenateTransactionScraper(TransactionScraper):
         while nextResults:
             yield from nextResults
             start += RESULTS_PER_PAGE
-            nextResults = self.get_links_to_disclosures(
-                self.get_csrf(resp), start
+            nextResults = self.get_links_to_disclosures(self.get_csrf(resp), start)
+            time.sleep(SLEEPLENGTH)
+
+    def scrape(self):
+        for result in self.scrape_results():
+            soup = BeautifulSoup(result[3], "html.parser")
+            report_url = soup.a["href"]
+
+            yield ScrapedDisclosure(
+                report_url, result[2], soup.a.text, result[4], " "
             )
-            time.sleep(SLEEPLENGTH)
-
-    def extract_data(self, html):
-        # Get table from html
-        soup = BeautifulSoup(html, "lxml")
-
-        if soup("table"):
-            dfs = pd.read_html(html)
-            print(dfs[0])
-
-            return dfs[0]
-        else:
-            return None
-
-    def parse(self, json):
-
-        # The search data is received as a list of results
-        # with links to the report for each senator
-        pics = []  # remember what filings must be entered manually
-        for result in json:
-            # Get the URL
-            report_url = f'{BASE}{result[3].split(" ",2)[1][6:-1]}'
-            report = self.session.get(report_url)
-
-            time.sleep(SLEEPLENGTH)
-
-            data = self.extract_data(report.text)
-
-            if type(data) is not pd.DataFrame:
-                pics.append(report_url)
-
-        print(len(pics))
-        print(pics)
-
-    def scrape():
-        pass
 
 
 def main():
-    results = SenateTransactionScraper(STARTDATE).scrape_results()
+    results = SenateTransactionScraper(STARTDATE).scrape()
     for result in results:
         print(result)
 
