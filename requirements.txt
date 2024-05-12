@@ -3,3 +3,5 @@ beautifulsoup4==4.12.0
 requests
 pandas
 lxml
+congress-transaction-scraper==0.0.7
+us

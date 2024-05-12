@@ -1,9 +1,5 @@
 # Extend the base Python image
 # See https://hub.docker.com/_/python for version options
-# N.b., there are many options for Python images. We used the plain
-# version number in the pilot. YMMV. See this post for a discussion of
-# some options and their pros and cons:
-# https://pythonspeed.com/articles/base-image-python-docker-images/
 FROM python:3.11
 
 # Install Node.js

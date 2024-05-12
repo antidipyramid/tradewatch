@@ -1,13 +1,18 @@
+import us
+
 from django.db import models
 
 
 class Senator(models.Model):
     PARTY_CHOICES = [("D", "Democratic"), ("R", "Republican"), ("I", "Independent")]
+    STATE_CHOICES = us.states.mapping("abbr", "name").items()
 
     last_name = models.CharField(max_length=64)
     first_name = models.CharField(max_length=64)
-    party = models.CharField(max_length=2, choices=PARTY_CHOICES)
-    state = models.CharField(max_length=2)
+    party = models.CharField(
+        max_length=2, choices=PARTY_CHOICES, blank=True, null=True
+    )  # Party will be set manually after scrapes
+    state = models.CharField(max_length=2, choices=STATE_CHOICES)
 
 
 class Disclosure(models.Model):
@@ -21,6 +26,9 @@ class Disclosure(models.Model):
     senator = models.ForeignKey(Senator, on_delete=models.CASCADE)
     url = models.URLField(max_length=512)
     title = models.CharField(max_length=256)
+    scanned = models.BooleanField(
+        default=False, help_text="Is a scan of a paper disclosure"
+    )
     related = models.ManyToManyField(
         "self", help_text="Useful to relate amendments to the original disclosure"
     )
